@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>macOS</title>
+
+    <!-- Core stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Remix Icon CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+
+    <!-- GSAP CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.13.0/gsap.min.js"></script>
+</head>
+<body>
+    <!-- Splash screen -->
+    <div id="splash-screen">
+        <div class="splash-container">
+            <div class="apple-logo">
+                <!-- Apple SVG -->
+                <svg width="80" height="80" viewBox="0 0 24 24" fill="none">
+                    <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" fill="currentColor"/>
+                </svg>
+            </div>
+            <div class="loading-bar">
+                <div class="loading-progress"></div>
+            </div>
+            <div class="splash-text">macOS</div>
+        </div>
+    </div>
+
+    <!-- Desktop -->
+    <div id="desktop" style="display: none;">
+        <!-- macOS-style top bar -->
+        <header id="topbar">
+            <ul class="menu-left">
+                <!-- Apple / system menu -->
+                <li class="menu-item dropdown" data-dropdown>
+                    <i class="ri-apple-fill"></i>
+                    <ul class="dropdown-menu">
+                        <li>About This Mac</li>
+                        <li>System Settings…</li>
+                        <li class="divider"></li>
+                        <li>Sleep</li>
+                        <li>Restart…</li>
+                        <li>Shut Down…</li>
+                    </ul>
+                </li>
+
+                <!-- Example Finder menu -->
+                <li class="menu-item dropdown" data-dropdown>
+                    Finder
+                    <ul class="dropdown-menu">
+                        <li>Preferences…</li>
+                        <li>Empty Trash</li>
+                    </ul>
+                </li>
+            </ul>
+
+            <div class="menu-right">
+                <i class="ri-wifi-line"></i>
+                <i class="ri-battery-charge-line"></i>
+                <span id="clock"></span>
+            </div>
+        </header>
+
+        <!-- macOS-style dock with essential apps only -->
+        <nav id="dock">
+            <div class="dock-container">
+                <!-- Essential app icons section -->
+                <div class="dock-apps">
+                    <div class="dock-item" data-app="finder">
+                        <img src="./assets/logos/finder.png" alt="Finder" class="dock-icon">
+                        <span class="dock-tooltip">Finder</span>
+                    </div>
+                    <div class="dock-item" data-app="safari">
+                        <img src="./assets/logos/safari.png" alt="Safari" class="dock-icon">
+                        <span class="dock-tooltip">Safari</span>
+                    </div>
+                    <div class="dock-item" data-app="calculator">
+                        <img src="./assets/logos/calculator.png" alt="Calculator" class="dock-icon">
+                        <span class="dock-tooltip">Calculator</span>
+                    </div>
+                    <div class="dock-item" data-app="terminal">
+                        <img src="./assets/logos/terminal.png" alt="Terminal" class="dock-icon">
+                        <span class="dock-tooltip">Terminal</span>
+                    </div>
+                </div>
+
+                <!-- Separator -->
+                <div class="dock-separator"></div>
+
+                <!-- Utilities section -->
+                <div class="dock-extras">
+                    <div class="dock-item" data-app="trash">
+                        <i class="ri-delete-bin-line"></i>
+                        <span class="dock-tooltip">Trash</span>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <!-- App Windows Container -->
+        <div id="appWindows"></div>
+
+        <!-- Space for future desktop content -->
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

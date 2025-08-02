@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terminal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+            background: #1a1a1a;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .terminal-window {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: #1e1e1e;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .terminal-titlebar {
+            height: 52px;
+            background: linear-gradient(180deg, #3a3a3a 0%, #2a2a2a 100%);
+            border-bottom: 1px solid #1a1a1a;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            -webkit-app-region: drag;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .window-control {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .close { background: #ff5f57; }
+        .minimize { background: #ffbd2e; }
+        .maximize { background: #28ca42; }
+
+        .window-control:hover {
+            filter: brightness(0.9);
+        }
+
+        .terminal-title {
+            flex: 1;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .terminal-content {
+            flex: 1;
+            background: #1e1e1e;
+            color: #00ff00;
+            padding: 16px;
+            overflow-y: auto;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .terminal-line {
+            margin-bottom: 4px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        .prompt {
+            color: #00ff00;
+        }
+
+        .command {
+            color: #ffffff;
+        }
+
+        .output {
+            color: #cccccc;
+        }
+
+        .error {
+            color: #ff4444;
+        }
+
+        .input-line {
+            display: flex;
+            align-items: center;
+        }
+
+        .prompt-symbol {
+            color: #00ff00;
+            margin-right: 8px;
+        }
+
+        .terminal-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: #ffffff;
+            font-family: inherit;
+            font-size: inherit;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 16px;
+            background: #00ff00;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .welcome-text {
+            color: #888888;
+            margin-bottom: 16px;
+        }
+
+        .directory-listing {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 8px;
+            margin: 8px 0;
+        }
+
+        .file-item {
+            color: #cccccc;
+        }
+
+        .file-item.directory {
+            color: #4a9eff;
+        }
+
+        .file-item.executable {
+            color: #00ff00;
+        }
+
+        /* Scrollbar styling */
+        .terminal-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .terminal-content::-webkit-scrollbar-track {
+            background: #2a2a2a;
+        }
+
+        .terminal-content::-webkit-scrollbar-thumb {
+            background: #555555;
+            border-radius: 4px;
+        }
+
+        .terminal-content::-webkit-scrollbar-thumb:hover {
+            background: #666666;
+        }
+    </style>
+</head>
+<body>
+    <div class="terminal-window">
+        <div class="terminal-titlebar">
+            <div class="window-controls">
+                <div class="window-control close" onclick="window.close()"></div>
+                <div class="window-control minimize" onclick="window.blur()"></div>
+                <div class="window-control maximize"></div>
+            </div>
+            <div class="terminal-title">Terminal</div>
+        </div>
+
+        <div class="terminal-content" id="terminalContent">
+            <div class="welcome-text">Last login: Fri Aug  1 21:00:00 on ttys000</div>
+            <div class="terminal-line">
+                <span class="prompt">user@macOS-Web ~ %</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const terminalContent = document.getElementById('terminalContent');
+        let commandHistory = [];
+        let historyIndex = -1;
+        let currentDirectory = '~';
+
+        // File system simulation
+        const fileSystem = {
+            '~': {
+                'Documents': { type: 'directory', files: ['resume.pdf', 'notes.txt'] },
+                'Downloads': { type: 'directory', files: ['installer.dmg', 'image.jpg'] },
+                'Desktop': { type: 'directory', files: ['project.zip'] },
+                'Music': { type: 'directory', files: ['song.mp3'] },
+                '.bashrc': { type: 'file' },
+                '.zshrc': { type: 'file' }
+            }
+        };
+
+        // Available commands
+        const commands = {
+            help: () => {
+                return `Available commands:
+  help      - Show this help message
+  ls        - List directory contents
+  pwd       - Show current directory
+  cd [dir]  - Change directory
+  clear     - Clear terminal
+  date      - Show current date and time
+  whoami    - Show current user
+  echo [text] - Display text
+  cat [file] - Show file contents
+  mkdir [name] - Create directory
+  touch [name] - Create file`;
+            },
+
+            ls: () => {
+                const currentFiles = fileSystem[currentDirectory];
+                if (!currentFiles) return 'Directory not found';
+                
+                let output = '';
+                Object.keys(currentFiles).forEach(item => {
+                    const itemData = currentFiles[item];
+                    const className = itemData.type === 'directory' ? 'directory' : 'file';
+                    output += `<span class="file-item ${className}">${item}</span>\n`;
+                });
+                return output;
+            },
+
+            pwd: () => currentDirectory,
+
+            cd: (args) => {
+                if (!args[0]) return currentDirectory;
+                const target = args[0];
+                
+                if (target === '..') {
+                    currentDirectory = '~';
+                    return '';
+                } else if (target === '~' || target === '/') {
+                    currentDirectory = '~';
+                    return '';
+                } else {
+                    const currentFiles = fileSystem[currentDirectory];
+                    if (currentFiles && currentFiles[target] && currentFiles[target].type === 'directory') {
+                        currentDirectory = `~/${target}`;
+                        return '';
+                    } else {
+                        return `cd: no such file or directory: ${target}`;
+                    }
+                }
+            },
+
+            clear: () => {
+                terminalContent.innerHTML = '';
+                return '';
+            },
+
+            date: () => new Date().toString(),
+
+            whoami: () => 'user',
+
+            echo: (args) => args.join(' '),
+
+            cat: (args) => {
+                if (!args[0]) return 'cat: missing file name';
+                const filename = args[0];
+                
+                // Simulate file contents
+                const fileContents = {
+                    'resume.pdf': 'PDF content (binary file)',
+                    'notes.txt': 'This is a sample text file.\nLine 2 of the file.\nEnd of file.',
+                    '.bashrc': '# Bash configuration file\nexport PATH=$PATH:/usr/local/bin',
+                    '.zshrc': '# Zsh configuration file\nexport SHELL=/bin/zsh'
+                };
+                
+                return fileContents[filename] || `cat: ${filename}: No such file or directory`;
+            },
+
+            mkdir: (args) => {
+                if (!args[0]) return 'mkdir: missing directory name';
+                return `Directory '${args[0]}' created (simulated)`;
+            },
+
+            touch: (args) => {
+                if (!args[0]) return 'touch: missing file name';
+                return `File '${args[0]}' created (simulated)`;
+            }
+        };
+
+        function createInputLine() {
+            const inputLine = document.createElement('div');
+            inputLine.className = 'input-line';
+            inputLine.innerHTML = `
+                <span class="prompt-symbol">user@macOS-Web ${currentDirectory} %</span>
+                <input type="text" class="terminal-input" autocomplete="off" spellcheck="false">
+            `;
+            
+            terminalContent.appendChild(inputLine);
+            const input = inputLine.querySelector('.terminal-input');
+            input.focus();
+            
+            input.addEventListener('keydown', handleInput);
+            
+            return input;
+        }
+
+        function handleInput(event) {
+            const input = event.target;
+            const command = input.value.trim();
+            
+            if (event.key === 'Enter') {
+                if (command) {
+                    commandHistory.push(command);
+                    historyIndex = commandHistory.length;
+                    executeCommand(command);
+                }
+                
+                // Create new input line
+                setTimeout(() => {
+                    createInputLine();
+                    scrollToBottom();
+                }, 10);
+                
+                input.disabled = true;
+                
+            } else if (event.key === 'ArrowUp') {
+                event.preventDefault();
+                if (historyIndex > 0) {
+                    historyIndex--;
+                    input.value = commandHistory[historyIndex];
+                }
+            } else if (event.key === 'ArrowDown') {
+                event.preventDefault();
+                if (historyIndex < commandHistory.length - 1) {
+                    historyIndex++;
+                    input.value = commandHistory[historyIndex];
+                } else {
+                    historyIndex = commandHistory.length;
+                    input.value = '';
+                }
+            }
+        }
+
+        function executeCommand(commandLine) {
+            const parts = commandLine.split(' ');
+            const command = parts[0];
+            const args = parts.slice(1);
+            
+            // Display the command
+            const commandDiv = document.createElement('div');
+            commandDiv.className = 'terminal-line command';
+            commandDiv.innerHTML = `<span class="prompt">user@macOS-Web ${currentDirectory} %</span> ${commandLine}`;
+            terminalContent.appendChild(commandDiv);
+            
+            // Execute command
+            let output = '';
+            if (commands[command]) {
+                output = commands[command](args);
+            } else if (command) {
+                output = `zsh: command not found: ${command}`;
+            }
+            
+            // Display output
+            if (output && command !== 'clear') {
+                const outputDiv = document.createElement('div');
+                outputDiv.className = `terminal-line ${output.includes('not found') || output.includes('error') ? 'error' : 'output'}`;
+                outputDiv.innerHTML = output;
+                terminalContent.appendChild(outputDiv);
+            }
+        }
+
+        function scrollToBottom() {
+            terminalContent.scrollTop = terminalContent.scrollHeight;
+        }
+
+        // Initialize first input line
+        createInputLine();
+
+        // Focus on terminal when clicked
+        terminalContent.addEventListener('click', () => {
+            const inputs = terminalContent.querySelectorAll('.terminal-input');
+            const lastInput = inputs[inputs.length - 1];
+            if (lastInput) lastInput.focus();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1075 @@
+/* ----- Reset & base ----------------------------------------------------- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overflow: hidden;
+    color: #fff;
+}
+
+/* ----- Splash screen ---------------------------------------------------- */
+#splash-screen {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+.splash-container {
+    text-align: center;
+    animation: slideUp 0.8s ease-out;
+}
+
+.apple-logo {
+    color: #fff;
+    margin-bottom: 30px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.apple-logo svg {
+    filter: drop-shadow(0 2px 10px rgba(0, 0, 0, 0.3));
+}
+
+.loading-bar {
+    width: 200px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 2px;
+    margin: 20px auto;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+}
+
+.loading-progress {
+    height: 100%;
+    background: linear-gradient(90deg, #ffffff, #f0f0f0);
+    border-radius: 2px;
+    width: 0%;
+    animation: loadProgress 2.5s ease-out forwards;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+}
+
+.splash-text {
+    font-size: 24px;
+    font-weight: 300;
+    margin-top: 20px;
+    opacity: 0;
+    animation: textFadeIn 1s ease-in-out 0.5s forwards;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.splash-exit {
+    animation: fadeOut 0.5s ease-in-out forwards;
+}
+
+/* ----- Desktop base ----------------------------------------------------- */
+#desktop {
+    width: 100vw;
+    height: 100vh;
+    background: url('bg.jpg') no-repeat center center/cover;
+    overflow: hidden;
+    padding-top: 28px;
+    padding-bottom: 100px;
+}
+
+/* ----- Top bar ---------------------------------------------------------- */
+#topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 28px;
+    padding: 0 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(20, 20, 20, 0.8);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 13px;
+    font-weight: 400;
+    user-select: none;
+    -webkit-user-select: none;
+    z-index: 1000;
+}
+
+.menu-left {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+.menu-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.menu-right i {
+    font-size: 14px;
+}
+
+/* ----- Menu items ------------------------------------------------------- */
+.menu-item {
+    cursor: default;
+    position: relative;
+    padding: 4px 12px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    border-radius: 4px;
+    transition: background-color 0.15s ease;
+}
+
+.menu-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.menu-item.open {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.menu-item i {
+    font-size: 16px;
+}
+
+/* ----- Dropdown reusable component ------------------------------------- */
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    min-width: 200px;
+    background: rgba(40, 40, 40, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 6px 0;
+    margin-top: 2px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+    list-style: none;
+}
+
+.dropdown-menu li {
+    padding: 8px 16px;
+    white-space: nowrap;
+    cursor: default;
+    font-size: 13px;
+    color: #ffffff;
+    transition: background-color 0.15s ease;
+    list-style: none;
+}
+
+.dropdown-menu li:hover:not(.divider) {
+    background: rgba(0, 122, 255, 0.8);
+}
+
+.dropdown-menu .divider {
+    height: 1px;
+    margin: 6px 12px;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 0;
+    list-style: none;
+}
+
+.dropdown-menu .divider:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* Show menu when parent has .open */
+.menu-item.open > .dropdown-menu {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* ----- Enhanced Glassmorphism Dock -------------------------------------- */
+#dock {
+    position: fixed;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+}
+
+.dock-container {
+    display: flex;
+    align-items: end;
+    position: relative;
+    padding: 12px 16px;
+    border-radius: 20px;
+    
+    /* Advanced glassmorphism background layers */
+    background: 
+        linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 100%),
+        linear-gradient(225deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.05) 100%);
+    
+    /* Multiple backdrop filters for depth */
+    backdrop-filter: blur(30px) saturate(1.5) brightness(1.1);
+    -webkit-backdrop-filter: blur(30px) saturate(1.5) brightness(1.1);
+    
+    /* Enhanced borders */
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-top: 1px solid rgba(255, 255, 255, 0.6);
+    border-left: 1px solid rgba(255, 255, 255, 0.3);
+    
+    /* Advanced shadow system */
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        0 2px 8px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Glass reflection effect overlay */
+.dock-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0) 100%);
+    border-radius: 20px 20px 0 0;
+    pointer-events: none;
+}
+
+/* Subtle noise texture for realism */
+.dock-container::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 20px;
+    background-image: 
+        radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.dock-apps, .dock-extras {
+    display: flex;
+    align-items: end;
+    gap: 8px;
+    position: relative;
+    z-index: 1;
+}
+
+.dock-separator {
+    width: 1px;
+    height: 36px;
+    background: linear-gradient(180deg, 
+        rgba(255, 255, 255, 0.4) 0%, 
+        rgba(255, 255, 255, 0.8) 50%, 
+        rgba(255, 255, 255, 0.4) 100%);
+    margin: 0 12px;
+    align-self: center;
+    position: relative;
+    z-index: 1;
+    box-shadow: 
+        1px 0 0 rgba(0, 0, 0, 0.1),
+        -1px 0 0 rgba(255, 255, 255, 0.1);
+}
+
+.dock-item {
+    position: relative;
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1;
+    
+    /* Individual item glassmorphism */
+    background: 
+        linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.1) 100%),
+        linear-gradient(225deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
+    
+    backdrop-filter: blur(20px) saturate(1.3);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-top: 1px solid rgba(255, 255, 255, 0.5);
+    
+    box-shadow: 
+        0 4px 16px rgba(0, 0, 0, 0.2),
+        0 1px 4px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Item reflection */
+.dock-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 50%;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 100%);
+    border-radius: 14px 14px 0 0;
+    pointer-events: none;
+}
+
+/* ----- App icon images styling ------------------------------------------ */
+.dock-icon {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+    z-index: 1;
+    position: relative;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+    border-radius: 8px;
+}
+
+/* ----- Remix icons for utilities ---------------------------------------- */
+.dock-item i {
+    font-size: 26px;
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    z-index: 1;
+    position: relative;
+}
+
+/* ----- Enhanced Dock tooltips ------------------------------------------- */
+.dock-tooltip {
+    position: absolute;
+    bottom: 130%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 2;
+    
+    /* Glassmorphism tooltip */
+    background: 
+        linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.6) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.dock-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 4px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.8);
+}
+
+/* ----- Clock styling ---------------------------------------------------- */
+#clock {
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+}
+
+/* ----- Responsive ------------------------------------------------------- */
+@media (max-width: 768px) {
+    .apple-logo svg {
+        width: 60px;
+        height: 60px;
+    }
+
+    .splash-text {
+        font-size: 20px;
+    }
+
+    .loading-bar {
+        width: 150px;
+    }
+
+    #topbar {
+        font-size: 12px;
+        padding: 0 8px;
+    }
+
+    .menu-item {
+        padding: 4px 8px;
+    }
+
+    .dropdown-menu {
+        min-width: 160px;
+    }
+
+    .dock-container {
+        padding: 10px 12px;
+    }
+
+    .dock-apps, .dock-extras {
+        gap: 6px;
+    }
+
+    .dock-item {
+        width: 44px;
+        height: 44px;
+    }
+
+    .dock-icon {
+        width: 30px;
+        height: 30px;
+    }
+
+    .dock-item i {
+        font-size: 22px;
+    }
+}
+
+/* ----- Animations ------------------------------------------------------- */
+@keyframes fadeIn { 
+    from { opacity: 0; } 
+    to { opacity: 1; } 
+}
+
+@keyframes fadeOut { 
+    from { opacity: 1; } 
+    to { opacity: 0; } 
+}
+
+@keyframes slideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to   { transform: translateY(0);   opacity: 1; }
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.05); }
+}
+
+@keyframes loadProgress {
+    0%   { width: 0%; }
+    70%  { width: 80%; }
+    100% { width: 100%; }
+}
+
+@keyframes textFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+/* Add these styles to your existing styles.css file */
+
+/* ----- App Windows ------------------------------------------------------ */
+.app-window {
+    position: absolute;
+    top: 100px;
+    left: 100px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    min-width: 600px;
+    min-height: 400px;
+    z-index: 1000;
+}
+
+.window-titlebar {
+    height: 52px;
+    background: linear-gradient(180deg, #f8f8f8 0%, #e8e8e8 100%);
+    border-bottom: 1px solid #d1d1d1;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    cursor: move;
+    user-select: none;
+}
+
+.window-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.window-control {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.window-control.close { background: #ff5f57; }
+.window-control.minimize { background: #ffbd2e; }
+.window-control.maximize { background: #28ca42; }
+
+.window-control:hover {
+    filter: brightness(0.9);
+}
+
+.window-title {
+    flex: 1;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+.app-content {
+    height: calc(100% - 52px);
+    overflow: hidden;
+}
+
+/* ----- Finder Window ---------------------------------------------------- */
+.finder-content {
+    display: flex;
+}
+
+.finder-sidebar {
+    width: 200px;
+    background: #f7f7f7;
+    border-right: 1px solid #d1d1d1;
+    padding: 16px 0;
+}
+
+.sidebar-section {
+    margin-bottom: 20px;
+}
+
+.sidebar-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: #8e8e93;
+    padding: 0 16px;
+    margin-bottom: 8px;
+}
+
+.sidebar-item {
+    display: flex;
+    align-items: center;
+    padding: 6px 16px;
+    font-size: 13px;
+    color: #333;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.sidebar-item:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.sidebar-item.active {
+    background: #007aff;
+    color: white;
+}
+
+.sidebar-item i {
+    margin-right: 8px;
+    font-size: 14px;
+}
+
+.finder-main {
+    flex: 1;
+    background: white;
+    padding: 20px;
+}
+
+.file-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 16px;
+}
+
+.file-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.file-item:hover {
+    background: rgba(0, 122, 255, 0.1);
+}
+
+.file-item i {
+    font-size: 32px;
+    color: #007aff;
+    margin-bottom: 8px;
+}
+
+.file-item span {
+    font-size: 11px;
+    color: #333;
+    text-align: center;
+}
+
+/* ----- Safari Window ---------------------------------------------------- */
+.safari-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.safari-toolbar {
+    height: 48px;
+    background: #f0f0f0;
+    border-bottom: 1px solid #d1d1d1;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    gap: 12px;
+}
+
+.nav-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.nav-btn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #c7c7c7;
+    border-radius: 6px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.address-bar {
+    flex: 1;
+    height: 32px;
+    background: white;
+    border: 1px solid #c7c7c7;
+    border-radius: 16px;
+    padding: 0 16px;
+    display: flex;
+    align-items: center;
+}
+
+.address-bar input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 14px;
+}
+
+.reload-btn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid #c7c7c7;
+    border-radius: 6px;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.safari-main {
+    flex: 1;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+}
+
+.start-page {
+    text-align: center;
+    max-width: 600px;
+}
+
+.start-logo {
+    font-size: 48px;
+    color: #007aff;
+    margin-bottom: 24px;
+}
+
+.start-title {
+    font-size: 24px;
+    font-weight: 300;
+    color: #333;
+    margin-bottom: 16px;
+}
+
+.start-subtitle {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 32px;
+}
+
+.bookmarks-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 16px;
+}
+
+.bookmark-item {
+    padding: 16px;
+    background: #f8f8f8;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.bookmark-item:hover {
+    background: #e8e8e8;
+}
+
+.bookmark-item i {
+    font-size: 24px;
+    color: #007aff;
+    margin-bottom: 8px;
+}
+
+.bookmark-item span {
+    font-size: 12px;
+    color: #333;
+    font-weight: 500;
+}
+
+/* ----- Calculator Window ------------------------------------------------ */
+.calculator-content {
+    background: #333;
+    padding: 20px;
+    width: 320px;
+    height: auto;
+}
+
+.calculator-display {
+    width: 100%;
+    height: 80px;
+    background: #1a1a1a;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 20px;
+    font-size: 36px;
+    font-weight: 300;
+    color: white;
+}
+
+.calculator-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.calc-btn {
+    height: 60px;
+    border: none;
+    border-radius: 12px;
+    font-size: 24px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.calc-btn.number {
+    background: #505050;
+    color: white;
+}
+
+.calc-btn.operator {
+    background: #ff9500;
+    color: white;
+}
+
+.calc-btn.function {
+    background: #a6a6a6;
+    color: black;
+}
+
+.calc-btn.equals {
+    background: #ff9500;
+    color: white;
+}
+
+.calc-btn.zero {
+    grid-column: span 2;
+}
+
+.calc-btn:hover {
+    filter: brightness(1.1);
+}
+
+.calc-btn:active {
+    transform: scale(0.95);
+}
+
+/* ----- Terminal Window (Black Background) ----------------------- */
+.terminal-content {
+    background: #1e1e1e;
+    color: #00ff00;
+    padding: 16px;
+    font-family: 'SF Mono', Monaco, monospace;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    font-size: 14px;
+    overflow: hidden;
+}
+
+.terminal-output {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 16px;
+    min-height: 200px;
+    background: #1e1e1e;
+    border-radius: 8px;
+    padding: 12px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.terminal-output::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+}
+
+.terminal-line {
+    margin-bottom: 4px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.4;
+    color: #00ff00;
+}
+
+.prompt {
+    color: #00ff00;
+}
+
+.terminal-input-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    background: #1e1e1e;
+    border-radius: 6px;
+    padding: 8px 12px;
+}
+
+.terminal-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #00ff00;
+    font-family: inherit;
+    font-size: inherit;
+    min-width: 0;
+}
+
+.terminal-input::placeholder {
+    color: rgba(0, 255, 0, 0.5);
+}
+
+/* ----- App Windows ------------------------------------------------------ */
+.app-window {
+    position: absolute;
+    top: 100px;
+    left: 100px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    overflow: hidden !important;
+    min-width: 360px;
+    min-height: 400px;
+    max-width: 90vw;
+    max-height: 90vh;
+    resize: both;
+    z-index: 1000;
+    /* Remove CSS transitions - using GSAP instead */
+}
+
+/* Maximize state */
+.app-window.maximized {
+    border-radius: 0;
+    resize: none;
+    max-width: none;
+    max-height: none;
+    /* Position and size will be handled by GSAP */
+}
+
+/* Minimize state */
+.app-window.minimized {
+    display: none;
+}
+
+.window-titlebar {
+    height: 52px;
+    background: linear-gradient(180deg, #f8f8f8 0%, #e8e8e8 100%);
+    border-bottom: 1px solid #d1d1d1;
+    display: flex;
+    align-items: center;
+    padding: 0 16px;
+    cursor: move;
+    user-select: none;
+    flex-shrink: 0;
+}
+
+.window-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.window-control {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.window-control.close { background: #ff5f57; }
+.window-control.minimize { background: #ffbd2e; }
+.window-control.maximize { background: #28ca42; }
+
+.window-control:hover {
+    filter: brightness(0.9);
+}
+
+.window-title {
+    flex: 1;
+    text-align: center;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+.app-content {
+    height: calc(100% - 52px);
+    overflow: hidden !important;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Enable scrolling only on app body areas with hidden scrollbars */
+.finder-main,
+.safari-main,
+.terminal-output {
+    overflow-y: auto;
+    scrollbar-width: none;          /* Firefox */
+    -ms-overflow-style: none;       /* IE 10+ */
+}
+
+/* Hide WebKit scrollbars */
+.finder-main::-webkit-scrollbar,
+.safari-main::-webkit-scrollbar,
+.terminal-output::-webkit-scrollbar {
+    width: 0px;
+    height: 0px;
+}
+
+/* Calculator: full height and width in content area */
+.calculator-content {
+    background: #333;
+    padding: 20px;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.calculator-display {
+    width: 100%;
+    height: 80px;
+    background: #1a1a1a;
+    border-radius: 12px;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 20px;
+    font-size: 36px;
+    font-weight: 300;
+    color: white;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.calculator-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    flex-grow: 1;
+}
+
+.calc-btn {
+    border: none;
+    border-radius: 12px;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Remove CSS transitions - using GSAP if needed */
+}
+
+.calc-btn.number {
+    background: #505050;
+    color: white;
+}
+
+.calc-btn.operator {
+    background: #ff9500;
+    color: white;
+}
+
+.calc-btn.function {
+    background: #a6a6a6;
+    color: black;
+}
+
+.calc-btn.equals {
+    background: #ff9500;
+    color: white;
+}
+
+.calc-btn.zero {
+    grid-column: span 2;
+    justify-content: flex-start;
+    padding-left: 24px;
+}
+
+.calc-btn:hover {
+    filter: brightness(1.1);
+    transform: scale(1.05);
+}
+
+.calc-btn:active {
+    transform: scale(0.95);
+}
+
+/* Dock indicator for minimized apps */
+.dock-item.has-minimized::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+}
+
+

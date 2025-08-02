@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finder</title>
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f7;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .finder-window {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: #ffffff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .finder-titlebar {
+            height: 52px;
+            background: linear-gradient(180deg, #f8f8f8 0%, #e8e8e8 100%);
+            border-bottom: 1px solid #d1d1d1;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            -webkit-app-region: drag;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .window-control {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .close { background: #ff5f57; }
+        .minimize { background: #ffbd2e; }
+        .maximize { background: #28ca42; }
+
+        .window-control:hover {
+            filter: brightness(0.9);
+        }
+
+        .finder-title {
+            flex: 1;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .finder-toolbar {
+            height: 48px;
+            background: linear-gradient(180deg, #fafafa 0%, #f0f0f0 100%);
+            border-bottom: 1px solid #d1d1d1;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 12px;
+        }
+
+        .toolbar-btn {
+            padding: 6px 12px;
+            background: none;
+            border: 1px solid #c7c7c7;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            color: #333;
+            transition: all 0.2s ease;
+        }
+
+        .toolbar-btn:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .finder-content {
+            flex: 1;
+            display: flex;
+        }
+
+        .sidebar {
+            width: 200px;
+            background: #f7f7f7;
+            border-right: 1px solid #d1d1d1;
+            padding: 16px 0;
+        }
+
+        .sidebar-section {
+            margin-bottom: 24px;
+        }
+
+        .sidebar-title {
+            font-size: 11px;
+            font-weight: 600;
+            color: #8e8e93;
+            text-transform: uppercase;
+            padding: 0 16px;
+            margin-bottom: 8px;
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            padding: 6px 16px;
+            font-size: 13px;
+            color: #333;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .sidebar-item:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .sidebar-item.active {
+            background: #007aff;
+            color: white;
+        }
+
+        .sidebar-item i {
+            margin-right: 8px;
+            font-size: 14px;
+        }
+
+        .main-content {
+            flex: 1;
+            background: white;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .content-header {
+            height: 32px;
+            background: #fafafa;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            font-size: 11px;
+            color: #8e8e93;
+            font-weight: 500;
+        }
+
+        .file-grid {
+            flex: 1;
+            padding: 16px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 16px;
+            overflow-y: auto;
+        }
+
+        .file-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .file-item:hover {
+            background: rgba(0, 122, 255, 0.1);
+        }
+
+        .file-icon {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            color: #007aff;
+        }
+
+        .file-name {
+            font-size: 11px;
+            color: #333;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .status-bar {
+            height: 24px;
+            background: #f0f0f0;
+            border-top: 1px solid #d1d1d1;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            font-size: 11px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="finder-window">
+        <div class="finder-titlebar">
+            <div class="window-controls">
+                <div class="window-control close" onclick="window.close()"></div>
+                <div class="window-control minimize" onclick="window.blur()"></div>
+                <div class="window-control maximize"></div>
+            </div>
+            <div class="finder-title">Documents</div>
+        </div>
+
+        <div class="finder-toolbar">
+            <button class="toolbar-btn"><i class="ri-arrow-left-line"></i></button>
+            <button class="toolbar-btn"><i class="ri-arrow-right-line"></i></button>
+            <button class="toolbar-btn">View</button>
+            <button class="toolbar-btn">Action</button>
+        </div>
+
+        <div class="finder-content">
+            <div class="sidebar">
+                <div class="sidebar-section">
+                    <div class="sidebar-title">Favorites</div>
+                    <div class="sidebar-item active">
+                        <i class="ri-folder-line"></i>
+                        Documents
+                    </div>
+                    <div class="sidebar-item">
+                        <i class="ri-download-line"></i>
+                        Downloads
+                    </div>
+                    <div class="sidebar-item">
+                        <i class="ri-image-line"></i>
+                        Pictures
+                    </div>
+                    <div class="sidebar-item">
+                        <i class="ri-music-line"></i>
+                        Music
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <div class="sidebar-title">Devices</div>
+                    <div class="sidebar-item">
+                        <i class="ri-hard-drive-line"></i>
+                        Macintosh HD
+                    </div>
+                </div>
+            </div>
+
+            <div class="main-content">
+                <div class="content-header">
+                    Name
+                </div>
+                <div class="file-grid" id="fileGrid">
+                    <!-- Files will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <span id="statusText">8 items</span>
+        </div>
+    </div>
+
+    <script>
+        // Sample file data
+        const files = [
+            { name: 'Resume.pdf', type: 'pdf', icon: 'ri-file-pdf-line' },
+            { name: 'Photos', type: 'folder', icon: 'ri-folder-line' },
+            { name: 'Projects', type: 'folder', icon: 'ri-folder-line' },
+            { name: 'Notes.txt', type: 'text', icon: 'ri-file-text-line' },
+            { name: 'Budget.xlsx', type: 'excel', icon: 'ri-file-excel-line' },
+            { name: 'Presentation.pptx', type: 'powerpoint', icon: 'ri-file-ppt-line' },
+            { name: 'Music', type: 'folder', icon: 'ri-folder-line' },
+            { name: 'Archive.zip', type: 'archive', icon: 'ri-file-zip-line' }
+        ];
+
+        // Populate file grid
+        function populateFiles() {
+            const fileGrid = document.getElementById('fileGrid');
+            const statusText = document.getElementById('statusText');
+            
+            fileGrid.innerHTML = files.map(file => `
+                <div class="file-item" onclick="openFile('${file.name}')">
+                    <div class="file-icon">
+                        <i class="${file.icon}"></i>
+                    </div>
+                    <div class="file-name">${file.name}</div>
+                </div>
+            `).join('');
+            
+            statusText.textContent = `${files.length} items`;
+        }
+
+        // Handle file opening
+        function openFile(fileName) {
+            console.log(`Opening ${fileName}`);
+            // In a real app, this would open the file
+        }
+
+        // Handle sidebar navigation
+        document.querySelectorAll('.sidebar-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+                
+                const folderName = this.textContent.trim();
+                document.querySelector('.finder-title').textContent = folderName;
+            });
+        });
+
+        // Initialize
+        populateFiles();
+    </script>
+</body>
+</html>
