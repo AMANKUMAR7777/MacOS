@@ -1,563 +1,257 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const splashScreen = document.getElementById('splash-screen');
-    const desktop = document.getElementById('desktop');
 
-    /* ---------- Splash-screen handling ------------------------------ */
+    const splashScreen  = document.getElementById('splash-screen');
+    const desktop       = document.getElementById('desktop');
+    const dockContainer = document.querySelector('.dock-container');
+    const dockItems     = document.querySelectorAll('.dock-item');
+    const appWindows    = document.getElementById('appWindows');
+
+    const minimizedWindows = new Set();
+    const maximizedWindows = new Set();
+    let   currentHovered   = -1;
+
     const hideSplash = () => {
         splashScreen.classList.add('splash-exit');
         setTimeout(() => {
             splashScreen.style.display = 'none';
-            desktop.style.display = 'block';
-            initMacOSInterface();
+            desktop.style.display      = 'block';
+            initMacOS();
         }, 500);
     };
 
-    // Auto-hide after 3 s
-    setTimeout(hideSplash, 3000);
-
-    // Click to skip
+    setTimeout(hideSplash, 3_000);
     splashScreen.addEventListener('click', hideSplash);
 
-    /* ---------- Main init ------------------------------------------- */
-    function initMacOSInterface() {
+    function initMacOS() {
         initDropdowns();
         initClock();
-        initGSAPDockAnimations();
-        console.log('macOS interface loaded with GSAP animations');
+        initDockAnimations();
+        console.log('macOS-Web ready 🚀');
     }
 
-    /* ---------- Dropdown reusable component ------------------------- */
     function initDropdowns() {
-        // Toggle open / close on click
-        document.querySelectorAll('[data-dropdown]').forEach(drop => {
-            drop.addEventListener('click', e => {
+        document.addEventListener('click', e => {
+            const trigger = e.target.closest('[data-dropdown]');
+            if (trigger) {
                 e.stopPropagation();
-                // Close other open menus
-                document.querySelectorAll('.menu-item.open').forEach(openItem => {
-                    if (openItem !== drop) openItem.classList.remove('open');
-                });
-                // Toggle current
-                drop.classList.toggle('open');
-            });
+                document.querySelectorAll('.menu-item.open')
+                        .forEach(el => el !== trigger && el.classList.remove('open'));
+                trigger.classList.toggle('open');
+                return;
+            }
+            if (!e.target.closest('.dropdown-menu')) {
+                document.querySelectorAll('.menu-item.open')
+                        .forEach(el => el.classList.remove('open'));
+            }
         });
 
-        // Close menus when clicking outside
-        document.addEventListener('click', () => {
-            document.querySelectorAll('.menu-item.open')
-                    .forEach(item => item.classList.remove('open'));
-        });
-
-        // Close on Esc
-        window.addEventListener('keydown', e => {
+        document.addEventListener('keydown', e => {
             if (e.key === 'Escape') {
                 document.querySelectorAll('.menu-item.open')
-                        .forEach(item => item.classList.remove('open'));
+                        .forEach(el => el.classList.remove('open'));
             }
         });
     }
 
-    /* ---------- Clock (top-right) ----------------------------------- */
     function initClock() {
-        const clockEl = document.getElementById('clock');
-        if (!clockEl) return;
-
-        const update = () => {
-            const now = new Date();
-            const options = { hour: '2-digit', minute: '2-digit' };
-            clockEl.textContent = now.toLocaleTimeString(undefined, options);
-        };
-        update();
-        setInterval(update, 60_000);
+        const clock = document.getElementById('clock');
+        if (!clock) return;
+        const tick = () => clock.textContent =
+            new Date().toLocaleTimeString(undefined,
+                { hour: '2-digit', minute: '2-digit' });
+        tick();
+        setInterval(tick, 60_000);
     }
 
-    /* ---------- GSAP Dock Animations -------------------------------- */
-    function initGSAPDockAnimations() {
-        const dockItems = document.querySelectorAll('.dock-item');
-        const dockContainer = document.querySelector('.dock-container');
-        let currentHoveredIndex = -1;
-        
-        // Set initial state
-        gsap.set(dockItems, { 
-            scale: 1, 
-            y: 0,
-            transformOrigin: "bottom center"
-        });
+    function initDockAnimations() {
+        if (!dockContainer || dockItems.length === 0) return;
 
-        // Function to update all dock items based on hover state
-        function updateDockItems(hoveredIndex = -1) {
-            currentHoveredIndex = hoveredIndex;
-            
-            dockItems.forEach((item, index) => {
+        gsap.set(dockItems, { scale: 1, y: 0, transformOrigin: 'bottom center' });
+
+        function updateDock(idx = -1) {
+            currentHovered = idx;
+
+            dockItems.forEach((item, i) => {
                 const tooltip = item.querySelector('.dock-tooltip');
-                
-                if (index === hoveredIndex) {
-                    // Animate the hovered item
-                    gsap.to(item, {
-                        scale: 1.6,
-                        y: -20,
-                        duration: 0.4,
-                        ease: "back.out(1.7)"
-                    });
-                    
-                    // Show tooltip
-                    gsap.to(tooltip, {
-                        opacity: 1,
-                        y: -2,
-                        duration: 0.3,
-                        ease: "power2.out"
-                    });
-                    
-                    // Enhanced background on hover
-                    gsap.to(item, {
-                        background: "linear-gradient(135deg, rgba(255, 255, 255, 0.35) 0%, rgba(255, 255, 255, 0.15) 100%)",
-                        borderColor: "rgba(255, 255, 255, 0.5)",
-                        duration: 0.3
-                    });
-                    
-                } else if (Math.abs(index - hoveredIndex) === 1) {
-                    // Animate neighboring items
-                    gsap.to(item, {
-                        scale: 1.25,
-                        y: -10,
-                        duration: 0.4,
-                        ease: "back.out(1.7)"
-                    });
-                    
-                    gsap.to(tooltip, {
-                        opacity: 0,
-                        y: 0,
-                        duration: 0.2
-                    });
-                    
-                } else if (Math.abs(index - hoveredIndex) === 2) {
-                    // Animate second-level neighbors
-                    gsap.to(item, {
-                        scale: 1.12,
-                        y: -5,
-                        duration: 0.4,
-                        ease: "back.out(1.7)"
-                    });
-                    
-                    gsap.to(tooltip, {
-                        opacity: 0,
-                        y: 0,
-                        duration: 0.2
-                    });
-                    
+                const tween   = (s, y) => gsap.to(item,
+                    { scale: s, y, duration: 0.4, ease: 'back.out(1.7)' });
+
+                if (i === idx) {
+                    tween(1.6, -20);
+                    tooltip && gsap.to(tooltip, { opacity: 1, y: -2, duration: 0.3 });
+                } else if (Math.abs(i - idx) === 1) {
+                    tween(1.25, -10);
+                    tooltip && gsap.to(tooltip, { opacity: 0, y: 0, duration: 0.2 });
+                } else if (Math.abs(i - idx) === 2) {
+                    tween(1.12, -5);
+                    tooltip && gsap.to(tooltip, { opacity: 0, y: 0, duration: 0.2 });
                 } else {
-                    // Reset other items
-                    gsap.to(item, {
-                        scale: 1,
-                        y: 0,
-                        duration: 0.4,
-                        ease: "back.out(1.7)"
-                    });
-                    
-                    gsap.to(tooltip, {
-                        opacity: 0,
-                        y: 0,
-                        duration: 0.2
-                    });
-                    
-                    // Reset background
-                    gsap.to(item, {
-                        background: "linear-gradient(135deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.1) 100%)",
-                        borderColor: "rgba(255, 255, 255, 0.3)",
-                        duration: 0.3
-                    });
+                    tween(1, 0);
+                    tooltip && gsap.to(tooltip, { opacity: 0, y: 0, duration: 0.2 });
                 }
             });
         }
 
-        // Add hover event listeners
-        dockItems.forEach((item, index) => {
-            item.addEventListener('mouseenter', () => {
-                updateDockItems(index);
-            });
+        dockContainer.addEventListener('mousemove', e => {
+            const item = e.target.closest('.dock-item');
+            if (!item) return;
+            const idx  = [...dockItems].indexOf(item);
+            if (idx !== currentHovered) updateDock(idx);
+        }, true);
 
-            // Click animation with GSAP
-            item.addEventListener('click', () => {
-                const app = item.dataset.app;
-                console.log(`Opening ${app}`);
-                
-                // GSAP click animation
-                const tl = gsap.timeline();
-                tl.to(item, {
-                    scale: 0.9,
-                    duration: 0.1,
-                    ease: "power2.out"
-                })
-                .to(item, {
-                    scale: currentHoveredIndex === index ? 1.6 : 1,
-                    duration: 0.2,
-                    ease: "back.out(1.7)"
-                });
+        dockContainer.addEventListener('mouseleave', () => updateDock(-1));
 
-                openApp(app);
-            });
+        dockContainer.addEventListener('click', e => {
+            const item = e.target.closest('.dock-item');
+            item && openApp(item.dataset.app);
         });
 
-        // Reset all items when mouse leaves dock container
-        dockContainer.addEventListener('mouseleave', () => {
-            updateDockItems(-1);
-        });
-
-        // Smooth dock container entrance animation
-        gsap.fromTo(dockContainer, 
-            { 
-                y: 100, 
-                opacity: 0,
-                scale: 0.8
-            },
-            { 
-                y: 0, 
-                opacity: 1,
-                scale: 1,
-                duration: 0.8,
-                ease: "back.out(1.7)",
-                delay: 0.5
-            }
-        );
+        gsap.fromTo(dockContainer,
+            { y: 100, opacity: 0, scale: 0.8 },
+            { y: 0,   opacity: 1, scale: 1, duration: 0.8,
+              ease: 'back.out(1.7)', delay: 0.5 });
     }
 
-    /* ---------- Enhanced Window System with GSAP -------------------- */
-    const minimizedWindows = new Set();
-    const maximizedWindows = new Set();
+    const topZ = () => Math.max(1000,
+        ...[...document.querySelectorAll('.app-window')]
+        .map(el => +el.style.zIndex || 1000));
 
-    function openApp(appName) {
-        console.log(`Launching ${appName}...`);
-        
-        let windowContainer = document.getElementById(`${appName}-window`);
+    const bringToFront = win => {
+        win.style.zIndex = topZ() + 1;
+        gsap.fromTo(win, { scale: 0.98 }, { scale: 1, duration: 0.2, ease: 'power2.out' });
+    };
 
-        if (windowContainer) {
-            if (minimizedWindows.has(appName)) {
-                restoreWindow(windowContainer, appName);
-            } else {
-                bringWindowToFront(windowContainer);
-            }
+    const makeDraggable = win => {
+        const bar = win.querySelector('.window-titlebar');
+        if (!bar) return;
+
+        let sx = 0, sy = 0, sl = 0, st = 0, dragging = false;
+
+        bar.addEventListener('mousedown', e => {
+            if (e.target.classList.contains('window-control')) return;
+            dragging = true;
+            sx = e.clientX; sy = e.clientY;
+            const r = win.getBoundingClientRect();
+            sl = r.left;   st = r.top;
+            bringToFront(win);
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', stop);
+        });
+
+        const drag = e => {
+            if (!dragging) return;
+            win.style.left =
+                Math.min(Math.max(0, sl + e.clientX - sx), window.innerWidth  - 200) + 'px';
+            win.style.top  =
+                Math.min(Math.max(28, st + e.clientY - sy), window.innerHeight - 100) + 'px';
+        };
+        const stop = () => {
+            dragging = false;
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', stop);
+        };
+    };
+
+    function openApp(app) {
+        let win = document.getElementById(`${app}-window`);
+        if (win) {
+            minimizedWindows.has(app) ? restoreWindow(win, app) : bringToFront(win);
             return;
         }
 
-        // Create new window
-        const appWindows = document.getElementById('appWindows');
-        const windowId = `${appName}-window`;
-        
-        windowContainer = document.createElement('div');
-        windowContainer.id = windowId;
-        windowContainer.className = 'app-window';
-        windowContainer.style.zIndex = getHighestZIndex() + 1;
+        const size = {
+            finder:      { w: 800, h: 600 },
+            safari:      { w: 900, h: 700 },
+            calculator:  { w: 360, h: 500 },
+            terminal:    { w: 700, h: 500 }
+        }[app] || { w: 600, h: 400 };
 
-        // Set app-specific default size
-        const appSizes = {
-            finder: { width: '800px', height: '600px' },
-            safari: { width: '900px', height: '700px' },
-            calculator: { width: '360px', height: '500px' },
-            terminal: { width: '700px', height: '500px' }
-        };
-        const size = appSizes[appName] || { width: '600px', height: '400px' };
-        windowContainer.style.width = size.width;
-        windowContainer.style.height = size.height;
+        win = document.createElement('div');
+        win.id        = `${app}-window`;
+        win.className = 'app-window';
+        win.style.cssText = `
+            width:${size.w}px;height:${size.h}px;
+            left:100px;top:100px;z-index:${topZ() + 1};`;
 
-        const appContent = getAppContent(appName);
-        windowContainer.innerHTML = appContent;
-
-        // Store original size and position for restore
-        windowContainer.dataset.originalWidth = size.width;
-        windowContainer.dataset.originalHeight = size.height;
-        windowContainer.dataset.originalLeft = '100px';
-        windowContainer.dataset.originalTop = '100px';
-
-        appWindows.appendChild(windowContainer);
-
-        // Enhanced GSAP opening animation
-        const tl = gsap.timeline();
-        
-        tl.fromTo(windowContainer,
-            { 
-                scale: 0.3, 
-                opacity: 0,
-                rotationY: 90,
-                transformOrigin: "center center"
-            },
-            { 
-                scale: 1, 
-                opacity: 1,
-                rotationY: 0,
-                duration: 0.6,
-                ease: "back.out(1.7)"
-            }
-        )
-        .to(windowContainer, {
-            y: 0,
-            duration: 0.2,
-            ease: "power2.out"
-        }, "-=0.3");
-
-        makeWindowDraggable(windowContainer);
-        initWindowControls(windowContainer, appName);
-        initAppFunctionality(appName, windowContainer);
-        updateDockIndicator(appName);
-    }
-
-    function restoreWindow(windowElement, appName) {
-        minimizedWindows.delete(appName);
-        windowElement.classList.remove('minimized');
-        
-        // GSAP restore from minimize animation
-        const tl = gsap.timeline();
-        
-        tl.set(windowElement, {
-            display: 'block'
-        })
-        .fromTo(windowElement, 
-            {
-                scale: 0.1,
-                y: window.innerHeight - 100,
-                opacity: 0
-            },
-            {
-                scale: 1,
-                y: 0,
-                x: 0,
-                opacity: 1,
-                duration: 0.6,
-                ease: "back.out(1.7)",
-                onComplete: () => {
-                    bringWindowToFront(windowElement);
-                }
-            }
-        );
-
-        updateDockIndicator(appName);
-    }
-
-    function updateDockIndicator(appName) {
-        const dockItem = document.querySelector(`[data-app="${appName}"]`);
-        if (!dockItem) return;
-        if (minimizedWindows.has(appName)) {
-            dockItem.classList.add('has-minimized');
-        } else {
-            dockItem.classList.remove('has-minimized');
-        }
-    }
-
-    /* ---------- Window Management Functions ----------------------- */
-    function getHighestZIndex() {
-        const windows = document.querySelectorAll('.app-window');
-        let highest = 1000;
-        windows.forEach(window => {
-            const z = parseInt(window.style.zIndex || 1000);
-            if (z > highest) highest = z;
-        });
-        return highest;
-    }
-
-    function bringWindowToFront(windowElement) {
-        windowElement.style.zIndex = getHighestZIndex() + 1;
-        
-        // GSAP focus animation
-        gsap.fromTo(windowElement, 
-            { scale: 0.98 },
-            { 
-                scale: 1, 
-                duration: 0.2, 
-                ease: "power2.out" 
-            }
-        );
-    }
-
-    function makeWindowDraggable(windowElement) {
-        const titlebar = windowElement.querySelector('.window-titlebar');
-        let isDragging = false;
-        let startX, startY, startLeft, startTop;
-
-        titlebar.addEventListener('mousedown', (e) => {
-            // Don't drag if clicking on window controls
-            if (e.target.classList.contains('window-control')) return;
-            
-            isDragging = true;
-            startX = e.clientX;
-            startY = e.clientY;
-            const rect = windowElement.getBoundingClientRect();
-            startLeft = rect.left;
-            startTop = rect.top;
-            
-            bringWindowToFront(windowElement);
-            
-            document.addEventListener('mousemove', drag);
-            document.addEventListener('mouseup', stopDrag);
+        Object.assign(win.dataset, {
+            originalWidth : `${size.w}px`,
+            originalHeight: `${size.h}px`,
+            originalLeft  : '100px',
+            originalTop   : '100px'
         });
 
-        function drag(e) {
-            if (!isDragging) return;
-            
-            const deltaX = e.clientX - startX;
-            const deltaY = e.clientY - startY;
-            
-            let newLeft = startLeft + deltaX;
-            let newTop = startTop + deltaY;
-            
-            // Constrain to viewport
-            newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - 200));
-            newTop = Math.max(28, Math.min(newTop, window.innerHeight - 100));
-            
-            windowElement.style.left = newLeft + 'px';
-            windowElement.style.top = newTop + 'px';
-        }
+        win.innerHTML = getAppTemplate(app);
+        appWindows.appendChild(win);
 
-        function stopDrag() {
-            isDragging = false;
-            document.removeEventListener('mousemove', drag);
-            document.removeEventListener('mouseup', stopDrag);
-        }
+        gsap.fromTo(win,
+            { scale: 0.3, opacity: 0, rotationY: 90, transformOrigin: 'center' },
+            { scale: 1,   opacity: 1, rotationY: 0, duration: 0.6,
+              ease: 'back.out(1.7)' });
+
+        makeDraggable(win);
+        initWindowControls(win, app);
+        setTimeout(() => initApp(app, win), 100);
     }
 
-    function initWindowControls(windowElement, appName) {
-        const closeBtn = windowElement.querySelector('.window-control.close');
-        const minimizeBtn = windowElement.querySelector('.window-control.minimize');
-        const maximizeBtn = windowElement.querySelector('.window-control.maximize');
+    const restoreWindow = (win, app) => {
+        minimizedWindows.delete(app);
+        win.classList.remove('minimized');
+        gsap.set(win, { display: 'block' });
+        gsap.fromTo(win,
+            { scale: 0.1, y: window.innerHeight - 100, opacity: 0 },
+            { scale: 1,   y: 0, opacity: 1, duration: 0.6,
+              ease: 'back.out(1.7)', onComplete: () => bringToFront(win) });
+    };
 
-        closeBtn.addEventListener('click', e => {
-            e.stopPropagation();
-            minimizedWindows.delete(appName);
-            maximizedWindows.delete(appName);
-            updateDockIndicator(appName);
-            
-            // GSAP close animation
-            gsap.to(windowElement, {
-                scale: 0.3,
-                opacity: 0,
-                duration: 0.3,
-                ease: "power2.in",
-                onComplete: () => windowElement.remove()
-            });
+    function initWindowControls(win, app) {
+        const [close, min, max] = [
+            '.close', '.minimize', '.maximize'
+        ].map(sel => win.querySelector(`.window-control${sel}`));
+
+        close && close.addEventListener('click', () => {
+            minimizedWindows.delete(app);
+            maximizedWindows.delete(app);
+            gsap.to(win, { scale: 0.3, opacity: 0, duration: 0.3,
+                           ease: 'power2.in', onComplete: () => win.remove() });
         });
 
-        minimizeBtn.addEventListener('click', e => {
-            e.stopPropagation();
-            minimizedWindows.add(appName);
-            windowElement.classList.add('minimized');
-            
-            // GSAP minimize animation - scale down and slide to dock
-            const tl = gsap.timeline();
-            tl.to(windowElement, {
-                scale: 0.1,
-                y: window.innerHeight - 100, // Animate towards dock
-                x: 0,
-                opacity: 0,
-                duration: 0.6,
-                ease: "power2.in"
-            })
-            .set(windowElement, {
-                display: 'none'
-            });
-            
-            updateDockIndicator(appName);
+        min && min.addEventListener('click', () => {
+            minimizedWindows.add(app);
+            win.classList.add('minimized');
+            gsap.to(win, { scale: 0.1, y: window.innerHeight - 100, opacity: 0,
+                           duration: 0.6, ease: 'power2.in',
+                           onComplete: () => gsap.set(win, { display: 'none' }) });
         });
 
-        maximizeBtn.addEventListener('click', e => {
-            e.stopPropagation();
-            
-            if (maximizedWindows.has(appName)) {
-                // GSAP restore animation
-                maximizedWindows.delete(appName);
-                
-                const tl = gsap.timeline();
-                
-                // First, remove maximized class to allow CSS transitions
-                tl.set(windowElement, {
-                    className: windowElement.className.replace('maximized', '').trim()
-                })
-                // Animate back to original size and position
-                .to(windowElement, {
-                    width: windowElement.dataset.originalWidth,
-                    height: windowElement.dataset.originalHeight,
-                    left: windowElement.dataset.originalLeft,
-                    top: windowElement.dataset.originalTop,
-                    duration: 0.4,
-                    ease: "power2.out",
-                    onComplete: () => {
-                        // Re-enable resize after animation
-                        windowElement.style.resize = 'both';
-                    }
+        max && max.addEventListener('click', () => {
+            if (maximizedWindows.has(app)) {              
+                maximizedWindows.delete(app);
+                win.classList.remove('maximized');
+                gsap.to(win, {
+                    width : win.dataset.originalWidth,
+                    height: win.dataset.originalHeight,
+                    left  : win.dataset.originalLeft,
+                    top   : win.dataset.originalTop,
+                    duration: 0.4, ease: 'power2.out',
+                    onComplete: () => win.style.resize = 'both'
                 });
-
-            } else {
-                // GSAP maximize animation
-                maximizedWindows.add(appName);
-
-                // Save current size/position
-                const rect = windowElement.getBoundingClientRect();
-                windowElement.dataset.originalWidth = rect.width + 'px';
-                windowElement.dataset.originalHeight = rect.height + 'px';
-                windowElement.dataset.originalLeft = rect.left + 'px';
-                windowElement.dataset.originalTop = rect.top + 'px';
-
-                // Disable resize during maximize
-                windowElement.style.resize = 'none';
-                
-                const tl = gsap.timeline();
-                
-                // Animate to maximized state
-                tl.to(windowElement, {
-                    width: '100vw',
-                    height: 'calc(100vh - 108px)',
-                    left: 0,
-                    top: 28,
-                    duration: 0.4,
-                    ease: "power2.out"
-                })
-                // Add maximized class after animation for styling
-                .set(windowElement, {
-                    className: windowElement.className + ' maximized'
+            } else {                                      
+                maximizedWindows.add(app);
+                win.style.resize = 'none';
+                gsap.to(win, {
+                    width:'100vw', height:'calc(100vh - 108px)',
+                    left:0, top:28, duration:0.4, ease:'power2.out',
+                    onComplete: () => win.classList.add('maximized')
                 });
             }
         });
 
-        windowElement.addEventListener('mousedown', () => bringWindowToFront(windowElement));
+        win.addEventListener('mousedown', () => bringToFront(win));
     }
 
-    /* ---------- App Content Templates ---------------------------- */
-    function getAppContent(appName) {
-        const appTemplates = {
-            finder: `
-                <div class="window-titlebar">
-                    <div class="window-controls">
-                        <div class="window-control close"></div>
-                        <div class="window-control minimize"></div>
-                        <div class="window-control maximize"></div>
-                    </div>
-                    <div class="window-title">Documents</div>
-                </div>
-                <div class="app-content finder-content">
-                    <div class="finder-sidebar">
-                        <div class="sidebar-section">
-                            <div class="sidebar-title">FAVORITES</div>
-                            <div class="sidebar-item active"><i class="ri-folder-line"></i> Documents</div>
-                            <div class="sidebar-item"><i class="ri-download-line"></i> Downloads</div>
-                            <div class="sidebar-item"><i class="ri-image-line"></i> Pictures</div>
-                            <div class="sidebar-item"><i class="ri-music-line"></i> Music</div>
-                        </div>
-                        <div class="sidebar-section">
-                            <div class="sidebar-title">DEVICES</div>
-                            <div class="sidebar-item"><i class="ri-hard-drive-line"></i> Macintosh HD</div>
-                        </div>
-                    </div>
-                    <div class="finder-main">
-                        <div class="file-grid">
-                            <div class="file-item"><i class="ri-file-pdf-line"></i><span>Resume.pdf</span></div>
-                            <div class="file-item"><i class="ri-folder-line"></i><span>Photos</span></div>
-                            <div class="file-item"><i class="ri-file-text-line"></i><span>Notes.txt</span></div>
-                            <div class="file-item"><i class="ri-folder-line"></i><span>Projects</span></div>
-                            <div class="file-item"><i class="ri-file-excel-line"></i><span>Budget.xlsx</span></div>
-                            <div class="file-item"><i class="ri-folder-line"></i><span>Music</span></div>
-                            <div class="file-item"><i class="ri-file-zip-line"></i><span>Archive.zip</span></div>
-                            <div class="file-item"><i class="ri-image-line"></i><span>Photo.jpg</span></div>
-                        </div>
-                    </div>
-                </div>
-            `,
-            
+    function getAppTemplate(app) {
+        const tpl = {
+
             safari: `
                 <div class="window-titlebar">
                     <div class="window-controls">
@@ -568,34 +262,39 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="window-title">Safari</div>
                 </div>
                 <div class="app-content safari-content">
-                    <div class="safari-toolbar">
-                        <div class="nav-controls">
-                            <button class="nav-btn"><i class="ri-arrow-left-line"></i></button>
-                            <button class="nav-btn"><i class="ri-arrow-right-line"></i></button>
-                        </div>
-                        <div class="address-bar">
-                            <input type="text" placeholder="Search or enter website name" value="">
-                        </div>
-                        <button class="reload-btn"><i class="ri-refresh-line"></i></button>
+                    <iframe src="apps/safari.html"
+                            style="width:100%;height:100%;
+                                   border:none;border-radius:0 0 12px 12px;"></iframe>
+                </div>`,
+
+            finder: `
+                <div class="window-titlebar">
+                    <div class="window-controls">
+                        <div class="window-control close"></div>
+                        <div class="window-control minimize"></div>
+                        <div class="window-control maximize"></div>
                     </div>
-                    <div class="safari-main">
-                        <div class="start-page">
-                            <div class="start-logo"><i class="ri-safari-line"></i></div>
-                            <div class="start-title">Safari</div>
-                            <div class="start-subtitle">Welcome to Safari Web Browser</div>
-                            <div class="bookmarks-grid">
-                                <div class="bookmark-item"><i class="ri-apple-line"></i><span>Apple</span></div>
-                                <div class="bookmark-item"><i class="ri-github-line"></i><span>GitHub</span></div>
-                                <div class="bookmark-item"><i class="ri-google-line"></i><span>Google</span></div>
-                                <div class="bookmark-item"><i class="ri-youtube-line"></i><span>YouTube</span></div>
-                                <div class="bookmark-item"><i class="ri-twitter-line"></i><span>Twitter</span></div>
-                                <div class="bookmark-item"><i class="ri-linkedin-line"></i><span>LinkedIn</span></div>
-                            </div>
-                        </div>
-                    </div>
+                    <div class="window-title">Finder</div>
                 </div>
-            `,
-            
+                <div class="app-content finder-content">
+                    <div class="finder-sidebar">
+                        <div class="sidebar-section">
+                            <div class="sidebar-title">FAVORITES</div>
+                            <div class="sidebar-item active"  data-path="Documents"><i class="ri-folder-line"></i> Documents</div>
+                            <div class="sidebar-item"         data-path="Downloads"><i class="ri-download-line"></i> Downloads</div>
+                            <div class="sidebar-item"         data-path="Pictures"><i class="ri-image-line"></i> Pictures</div>
+                            <div class="sidebar-item"         data-path="Music"><i class="ri-music-line"></i> Music</div>
+                        </div>
+                        <div class="sidebar-section">
+                            <div class="sidebar-title">DEVICES</div>
+                            <div class="sidebar-item"         data-path="Documents"><i class="ri-hard-drive-line"></i> Macintosh HD</div>
+                        </div>
+                    </div>
+                    <div class="finder-main">
+                        <div class="file-grid"></div> <!-- populated by JS -->
+                    </div>
+                </div>`,
+
             calculator: `
                 <div class="window-titlebar">
                     <div class="window-controls">
@@ -612,29 +311,28 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button class="calc-btn function" onclick="toggleSign()">±</button>
                         <button class="calc-btn function" onclick="percentage()">%</button>
                         <button class="calc-btn operator" onclick="setOperator('÷')">÷</button>
-                        
+
                         <button class="calc-btn number" onclick="inputCalcNumber('7')">7</button>
                         <button class="calc-btn number" onclick="inputCalcNumber('8')">8</button>
                         <button class="calc-btn number" onclick="inputCalcNumber('9')">9</button>
                         <button class="calc-btn operator" onclick="setOperator('×')">×</button>
-                        
+
                         <button class="calc-btn number" onclick="inputCalcNumber('4')">4</button>
                         <button class="calc-btn number" onclick="inputCalcNumber('5')">5</button>
                         <button class="calc-btn number" onclick="inputCalcNumber('6')">6</button>
                         <button class="calc-btn operator" onclick="setOperator('−')">−</button>
-                        
+
                         <button class="calc-btn number" onclick="inputCalcNumber('1')">1</button>
                         <button class="calc-btn number" onclick="inputCalcNumber('2')">2</button>
                         <button class="calc-btn number" onclick="inputCalcNumber('3')">3</button>
                         <button class="calc-btn operator" onclick="setOperator('+')">+</button>
-                        
+
                         <button class="calc-btn number zero" onclick="inputCalcNumber('0')">0</button>
                         <button class="calc-btn number" onclick="inputDecimal()">.</button>
                         <button class="calc-btn equals" onclick="calculate()">=</button>
                     </div>
-                </div>
-            `,
-            
+                </div>`,
+
             terminal: `
                 <div class="window-titlebar">
                     <div class="window-controls">
@@ -646,170 +344,140 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 <div class="app-content terminal-content">
                     <div class="terminal-output" id="terminal-output">
-                        <div class="terminal-line">Last login: Fri Aug  1 21:00:00 on ttys000</div>
-                        <div class="terminal-line"><span class="prompt">user@macOS-Web ~ %</span></div>
+                        <div class="terminal-line">Last login: ${new Date().toString()}</div>
+                        <div class="terminal-line"><span class="prompt">user@macOS-Web % </span></div>
                     </div>
                     <div class="terminal-input-line">
-                        <span class="prompt">user@macOS-Web ~ %</span>
+                        <span class="prompt">user@macOS-Web % </span>
                         <input type="text" class="terminal-input" id="terminal-input" autocomplete="off">
                     </div>
-                </div>
-            `
+                </div>`
         };
-        
-        return appTemplates[appName] || '<div>App not found</div>';
+        return tpl[app] || '<div>App not found</div>';
     }
 
-    /* ---------- App-specific functionality ----------------------- */
-    function initAppFunctionality(appName, windowContainer) {
-        if (appName === 'calculator') {
-            initCalculator(windowContainer);
-        } else if (appName === 'terminal') {
-            initTerminal(windowContainer);
-        }
-    }
+    let calcDisplay, calcOp = null, calcPrev = null, calcReset = false;
 
-    // Calculator functionality
-    let calcDisplay, calcOperator = null, calcPrevious = null, calcShouldReset = false;
-
-    window.inputCalcNumber = function(num) {
-        calcDisplay = calcDisplay || document.getElementById('calc-display');
-        if (calcShouldReset) {
-            calcDisplay.textContent = '0';
-            calcShouldReset = false;
-        }
-        if (calcDisplay.textContent === '0') {
-            calcDisplay.textContent = num;
-        } else {
-            calcDisplay.textContent += num;
-        }
+    window.inputCalcNumber = n => {
+        calcDisplay ??= document.getElementById('calc-display');
+        if (calcReset) { calcDisplay.textContent = '0'; calcReset = false; }
+        calcDisplay.textContent =
+            calcDisplay.textContent === '0' ? n : calcDisplay.textContent + n;
     };
-
-    window.inputDecimal = function() {
-        calcDisplay = calcDisplay || document.getElementById('calc-display');
-        if (calcShouldReset) {
-            calcDisplay.textContent = '0';
-            calcShouldReset = false;
-        }
-        if (calcDisplay.textContent.indexOf('.') === -1) {
-            calcDisplay.textContent += '.';
-        }
+    window.inputDecimal = () => {
+        calcDisplay ??= document.getElementById('calc-display');
+        if (calcReset) { calcDisplay.textContent = '0'; calcReset = false; }
+        if (!calcDisplay.textContent.includes('.')) calcDisplay.textContent += '.';
     };
-
-    window.setOperator = function(op) {
-        calcDisplay = calcDisplay || document.getElementById('calc-display');
-        if (calcOperator && !calcShouldReset) {
-            calculate();
-        }
-        calcPrevious = calcDisplay.textContent;
-        calcOperator = op;
-        calcShouldReset = true;
+    window.setOperator = op => {
+        calcDisplay ??= document.getElementById('calc-display');
+        if (calcOp && !calcReset) window.calculate();
+        calcPrev = calcDisplay.textContent; calcOp = op; calcReset = true;
     };
-
-    window.calculate = function() {
-        calcDisplay = calcDisplay || document.getElementById('calc-display');
-        if (calcOperator && calcPrevious !== null) {
-            const prev = parseFloat(calcPrevious);
-            const current = parseFloat(calcDisplay.textContent);
-            let result;
-
-            switch (calcOperator) {
-                case '+': result = prev + current; break;
-                case '−': result = prev - current; break;
-                case '×': result = prev * current; break;
-                case '÷': result = current !== 0 ? prev / current : 0; break;
-                default: return;
-            }
-
-            calcDisplay.textContent = result.toString();
-            calcOperator = null;
-            calcPrevious = null;
-            calcShouldReset = true;
-        }
+    window.calculate = () => {
+        calcDisplay ??= document.getElementById('calc-display');
+        if (!calcOp || calcPrev === null) return;
+        const a = +calcPrev, b = +calcDisplay.textContent;
+        const res = { '+': a+b, '−': a-b, '×': a*b, '÷': b!==0 ? a/b : 0 }[calcOp];
+        calcDisplay.textContent = res.toString();
+        calcOp = calcPrev = null; calcReset = true;
     };
-
-    window.clearCalc = function() {
-        calcDisplay = calcDisplay || document.getElementById('calc-display');
-        calcDisplay.textContent = '0';
-        calcOperator = null;
-        calcPrevious = null;
-        calcShouldReset = false;
-    };
-
-    window.toggleSign = function() {
-        calcDisplay = calcDisplay || document.getElementById('calc-display');
-        if (calcDisplay.textContent !== '0') {
-            calcDisplay.textContent = calcDisplay.textContent.charAt(0) === '-' 
-                ? calcDisplay.textContent.slice(1) 
+    window.clearCalc  = () => { calcDisplay.textContent = '0'; calcOp = calcPrev = null; calcReset = false; };
+    window.toggleSign = () => {
+        if (calcDisplay.textContent !== '0')
+            calcDisplay.textContent = calcDisplay.textContent.startsWith('-')
+                ? calcDisplay.textContent.slice(1)
                 : '-' + calcDisplay.textContent;
-        }
     };
+    window.percentage = () =>
+        calcDisplay.textContent = (+calcDisplay.textContent / 100).toString();
 
-    window.percentage = function() {
-        calcDisplay = calcDisplay || document.getElementById('calc-display');
-        calcDisplay.textContent = (parseFloat(calcDisplay.textContent) / 100).toString();
-    };
+    const initCalculator = win => calcDisplay = win.querySelector('#calc-display');
 
-    function initCalculator(windowContainer) {
-        calcDisplay = windowContainer.querySelector('#calc-display');
+    function initTerminal(win) {
+        const input  = win.querySelector('#terminal-input');
+        const output = win.querySelector('#terminal-output');
+        input && setTimeout(() => input.focus(), 100);
+
+        input.addEventListener('keypress', e => {
+            if (e.key !== 'Enter') return;
+            const cmd = input.value.trim(); input.value = '';
+            if (!cmd) return;
+
+            const addLine = html => {
+                const div = document.createElement('div');
+                div.className = 'terminal-line';
+                div.innerHTML = html;
+                output.appendChild(div);
+            };
+
+            addLine(`<span class="prompt">user@macOS-Web % </span>${cmd}`);
+
+            const respond = txt => addLine(txt);
+
+            switch (cmd) {
+                case 'ls':   respond('Applications  Documents  Downloads  Desktop'); break;
+                case 'pwd':  respond('/Users/user');                                 break;
+                case 'date': respond(new Date().toString());                         break;
+                case 'whoami':respond('user');                                       break;
+                case 'clear': output.innerHTML = ''; break;
+                case 'help': respond('ls, pwd, date, whoami, echo, clear, help');    break;
+                default:
+                    cmd.startsWith('echo ') ? respond(cmd.slice(5))
+                                             : respond(`zsh: command not found: ${cmd}`);
+            }
+            addLine('<span class="prompt">user@macOS-Web % </span>');
+            output.scrollTop = output.scrollHeight;
+        });
     }
 
-    function initTerminal(windowContainer) {
-        const input = windowContainer.querySelector('#terminal-input');
-        const output = windowContainer.querySelector('#terminal-output');
-        
-        input.focus();
-        
-        input.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                const command = this.value.trim();
-                
-                if (command) {
-                    // Add command to output
-                    const commandLine = document.createElement('div');
-                    commandLine.className = 'terminal-line';
-                    commandLine.innerHTML = `<span class="prompt">user@macOS-Web ~ %</span> ${command}`;
-                    output.appendChild(commandLine);
-                    
-                    // Process command
-                    let response = '';
-                    if (command === 'ls') {
-                        response = 'Applications  Documents  Downloads  Desktop  Library  Movies  Music  Pictures  Public';
-                    } else if (command === 'pwd') {
-                        response = '/Users/user';
-                    } else if (command === 'date') {
-                        response = new Date().toString();
-                    } else if (command === 'whoami') {
-                        response = 'user';
-                    } else if (command.startsWith('echo ')) {
-                        response = command.substring(5);
-                    } else if (command === 'clear') {
-                        output.innerHTML = '<div class="terminal-line"><span class="prompt">user@macOS-Web ~ %</span></div>';
-                        this.value = '';
-                        return;
-                    } else if (command === 'help') {
-                        response = 'Available commands: ls, pwd, date, whoami, echo [text], clear, help';
-                    } else {
-                        response = `zsh: command not found: ${command}`;
-                    }
-                    
-                    if (response) {
-                        const responseLine = document.createElement('div');
-                        responseLine.className = 'terminal-line';
-                        responseLine.textContent = response;
-                        output.appendChild(responseLine);
-                    }
-                }
-                
-                // Add new prompt line
-                const newPrompt = document.createElement('div');
-                newPrompt.className = 'terminal-line';
-                newPrompt.innerHTML = '<span class="prompt">user@macOS-Web ~ %</span>';
-                output.appendChild(newPrompt);
-                
-                this.value = '';
-                output.scrollTop = output.scrollHeight;
-            }
+    function initFinder(win) {
+        const fileGrid     = win.querySelector('.file-grid');
+        const sidebarItems = win.querySelectorAll('.sidebar-item');
+
+        const fs = {
+            Documents: [
+                { name:'Resume.pdf',   icon:'ri-file-pdf-line' },
+                { name:'Notes.txt',    icon:'ri-file-text-line' },
+                { name:'Projects',     icon:'ri-folder-line', isDir:true }
+            ],
+            Downloads: [
+                { name:'Installer.dmg',icon:'ri-download-2-line' },
+                { name:'Image.png',    icon:'ri-image-line' }
+            ],
+            Pictures: [
+                { name:'Vacation',     icon:'ri-folder-line', isDir:true },
+                { name:'Photo.jpg',    icon:'ri-image-line' }
+            ],
+            Music: [
+                { name:'Song.mp3',     icon:'ri-music-line' }
+            ]
+        };
+
+        const render = path => {
+            const list = fs[path] || [];
+            fileGrid.innerHTML = list.map(item => `
+                <div class="file-item">
+                    <i class="${item.icon}"></i>
+                    <span>${item.name}</span>
+                </div>`).join('');
+        };
+
+        sidebarItems.forEach(item => {
+            item.addEventListener('click', () => {
+                sidebarItems.forEach(el => el.classList.remove('active'));
+                item.classList.add('active');
+                render(item.dataset.path);
+            });
         });
+
+        render('Documents');   
+    }
+
+    function initApp(app, win) {
+        if      (app === 'calculator') initCalculator(win);
+        else if (app === 'terminal')   initTerminal(win);
+        else if (app === 'finder')     initFinder(win);
+
     }
 });

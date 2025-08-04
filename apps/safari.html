@@ -190,6 +190,7 @@
             background: white;
             display: flex;
             flex-direction: column;
+            position: relative;
         }
 
         .web-content {
@@ -267,6 +268,53 @@
             font-size: 11px;
             color: #666;
         }
+
+        .iframe-container {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
+
+        .iframe-container.active {
+            display: block;
+        }
+
+        .web-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007aff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .safari-titlebar .window-controls{display:none;}
+
     </style>
 </head>
 <body>
@@ -299,7 +347,7 @@
             </div>
 
             <div class="address-bar">
-                <input type="text" class="address-input" placeholder="Search or enter website name" id="addressInput" value="">
+                <input type="text" class="address-input" placeholder="Search or enter website" id="addressInput" value="">
             </div>
 
             <button class="reload-btn" id="reloadBtn">
@@ -308,7 +356,11 @@
         </div>
 
         <div class="content-area">
-            <div class="web-content">
+            <div class="loading-overlay" id="loadingOverlay">
+                <div class="loading-spinner"></div>
+            </div>
+
+            <div class="web-content" id="startPage">
                 <div class="start-page">
                     <div class="start-logo">
                         <i class="ri-safari-line"></i>
@@ -317,32 +369,60 @@
                     <div class="start-subtitle">Welcome to Safari Web Browser</div>
                     
                     <div class="bookmarks-grid">
-                        <div class="bookmark-item" onclick="navigateTo('https://apple.com')">
+                        <div class="bookmark-item" onclick="navigateTo('https://html5test.com/index.html')">
                             <div class="bookmark-icon">
-                                <i class="ri-apple-line"></i>
+                                <i class="ri-search-line"></i>
                             </div>
-                            <div class="bookmark-title">Apple</div>
+                            <div class="bookmark-title">HTML5 Test</div>
                         </div>
-                        <div class="bookmark-item" onclick="navigateTo('https://github.com')">
-                            <div class="bookmark-icon">
-                                <i class="ri-github-line"></i>
-                            </div>
-                            <div class="bookmark-title">GitHub</div>
-                        </div>
-                        <div class="bookmark-item" onclick="navigateTo('https://google.com')">
+                        <div class="bookmark-item" onclick="navigateTo('https://www.google.com/search?igu=1')">
                             <div class="bookmark-icon">
                                 <i class="ri-google-line"></i>
                             </div>
-                            <div class="bookmark-title">Google</div>
+                            <div class="bookmark-title">Google (iframe)</div>
                         </div>
-                        <div class="bookmark-item" onclick="navigateTo('https://youtube.com')">
+                        <div class="bookmark-item" onclick="navigateTo('https://searx.org/')">
                             <div class="bookmark-icon">
-                                <i class="ri-youtube-line"></i>
+                                <i class="ri-shield-check-line"></i>
                             </div>
-                            <div class="bookmark-title">YouTube</div>
+                            <div class="bookmark-title">SearX</div>
+                        </div>
+                        <div class="bookmark-item" onclick="navigateTo('https://yandex.com/')">
+                            <div class="bookmark-icon">
+                                <i class="ri-search-2-line"></i>
+                            </div>
+                            <div class="bookmark-title">Yandex</div>
+                        </div>
+                        <div class="bookmark-item" onclick="navigateTo('https://www.ecosia.org/')">
+                            <div class="bookmark-icon">
+                                <i class="ri-leaf-line"></i>
+                            </div>
+                            <div class="bookmark-title">Ecosia</div>
+                        </div>
+                        <div class="bookmark-item" onclick="navigateTo('https://www.qwant.com/')">
+                            <div class="bookmark-icon">
+                                <i class="ri-shield-line"></i>
+                            </div>
+                            <div class="bookmark-title">Qwant</div>
+                        </div>
+                        <div class="bookmark-item" onclick="navigateTo('https://wikipedia.org')">
+                            <div class="bookmark-icon">
+                                <i class="ri-book-open-line"></i>
+                            </div>
+                            <div class="bookmark-title">Wikipedia</div>
+                        </div>
+                        <div class="bookmark-item" onclick="navigateTo('https://archive.org')">
+                            <div class="bookmark-icon">
+                                <i class="ri-archive-line"></i>
+                            </div>
+                            <div class="bookmark-title">Archive.org</div>
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <div class="iframe-container" id="iframeContainer">
+                <iframe class="web-iframe" id="webIframe" src="" sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-pointer-lock allow-top-navigation"></iframe>
             </div>
         </div>
 
@@ -352,91 +432,124 @@
     </div>
 
     <script>
-        const addressInput = document.getElementById('addressInput');
-        const statusText = document.getElementById('statusText');
-        const backBtn = document.getElementById('backBtn');
-        const forwardBtn = document.getElementById('forwardBtn');
-        const reloadBtn = document.getElementById('reloadBtn');
+    const addressInput = document.getElementById('addressInput');
+    const statusText = document.getElementById('statusText');
+    const backBtn = document.getElementById('backBtn');
+    const forwardBtn = document.getElementById('forwardBtn');
+    const reloadBtn = document.getElementById('reloadBtn');
+    const startPage = document.getElementById('startPage');
+    const iframeContainer = document.getElementById('iframeContainer');
+    const webIframe = document.getElementById('webIframe');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const tabTitle = document.querySelector('.tab-title');
 
-        // Navigation history
-        let history = [];
-        let historyIndex = -1;
+    let history = [];
+    let historyIndex = -1;
+    let currentUrl = '';
 
-        // Handle address bar input
-        addressInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                const url = this.value;
-                if (url) {
-                    navigateTo(url);
+    const searchEngines = {
+        'default': 'https://www.google.com/search?igu=1&q=',
+        'yandex': 'https://yandex.com/search/?text=',
+        'ecosia': 'https://www.ecosia.org/search?q=',
+        'qwant': 'https://www.qwant.com/?q='
+    };
+
+    addressInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            let url = this.value.trim();
+            if (url) {
+                if (!url.includes('.') && !url.startsWith('http')) {
+                    url = searchEngines.default + encodeURIComponent(url);
+                } else if (!url.startsWith('http')) {
+                    url = 'https://' + url;
                 }
+                navigateTo(url);
             }
-        });
-
-        // Navigation functions
-        function navigateTo(url) {
-            // Add to history
-            history = history.slice(0, historyIndex + 1);
-            history.push(url);
-            historyIndex = history.length - 1;
-            
-            // Update UI
-            addressInput.value = url;
-            statusText.textContent = `Loading ${url}...`;
-            
-            // Update navigation buttons
-            updateNavButtons();
-            
-            // Simulate loading
-            setTimeout(() => {
-                statusText.textContent = `Loaded ${url}`;
-                document.querySelector('.tab-title').textContent = getPageTitle(url);
-            }, 1000);
         }
+    });
 
-        function updateNavButtons() {
-            backBtn.disabled = historyIndex <= 0;
-            forwardBtn.disabled = historyIndex >= history.length - 1;
-        }
+    function navigateTo(url) {
+        currentUrl = url;
+        showLoading();
 
-        function getPageTitle(url) {
-            const titles = {
-                'https://apple.com': 'Apple',
-                'https://github.com': 'GitHub',
-                'https://google.com': 'Google',
-                'https://youtube.com': 'YouTube'
-            };
-            return titles[url] || 'New Page';
-        }
+        history = history.slice(0, historyIndex + 1);
+        history.push(url);
+        historyIndex = history.length - 1;
 
-        // Navigation button handlers
-        backBtn.addEventListener('click', function() {
-            if (historyIndex > 0) {
-                historyIndex--;
-                const url = history[historyIndex];
-                addressInput.value = url;
-                statusText.textContent = url;
-                updateNavButtons();
-            }
-        });
+        addressInput.value = url;
+        statusText.textContent = `Loading ${url}...`;
 
-        forwardBtn.addEventListener('click', function() {
-            if (historyIndex < history.length - 1) {
-                historyIndex++;
-                const url = history[historyIndex];
-                addressInput.value = url;
-                statusText.textContent = url;
-                updateNavButtons();
-            }
-        });
+        startPage.style.display = 'none';
+        iframeContainer.classList.add('active');
 
-        reloadBtn.addEventListener('click', function() {
-            if (addressInput.value) {
-                navigateTo(addressInput.value);
-            }
-        });
+        webIframe.src = url;
 
-        // Initialize
         updateNavButtons();
-    </script>
+        tabTitle.textContent = getPageTitle(url);
+    }
+
+    function showLoading() {
+        loadingOverlay.style.display = 'flex';
+        setTimeout(() => {
+            loadingOverlay.style.display = 'none';
+        }, 3000);
+    }
+
+    function goHome() {
+        startPage.style.display = 'flex';
+        iframeContainer.classList.remove('active');
+        addressInput.value = '';
+        statusText.textContent = 'Ready';
+        tabTitle.textContent = 'Start Page';
+        loadingOverlay.style.display = 'none';
+    }
+
+    function updateNavButtons() {
+        backBtn.disabled = historyIndex <= 0;
+        forwardBtn.disabled = historyIndex >= history.length - 1;
+    }
+
+    function getPageTitle(url) {
+        const domain = url.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+        return domain.charAt(0).toUpperCase() + domain.slice(1);
+    }
+
+    backBtn.addEventListener('click', function() {
+        if (historyIndex > 0) {
+            historyIndex--;
+            const url = history[historyIndex];
+            navigateTo(url);
+        }
+    });
+
+    forwardBtn.addEventListener('click', function() {
+        if (historyIndex < history.length - 1) {
+            historyIndex++;
+            const url = history[historyIndex];
+            navigateTo(url);
+        }
+    });
+
+    reloadBtn.addEventListener('click', function() {
+        if (addressInput.value) {
+            showLoading();
+            webIframe.src = webIframe.src;
+            statusText.textContent = `Reloading ${addressInput.value}...`;
+        } else {
+            goHome();
+        }
+    });
+
+    webIframe.addEventListener('load', function() {
+        loadingOverlay.style.display = 'none';
+        statusText.textContent = `Loaded ${addressInput.value}`;
+    });
+
+    document.querySelector('.tab-close').addEventListener('click', function() {
+        goHome();
+    });
+
+    updateNavButtons();
+</script>
 </body>
 </html>
