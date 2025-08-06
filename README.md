@@ -1,6 +1,10 @@
+>Note: I have used AI to optimize and clean up my code. The main logic and structure were written by me — I just needed help making it less messy.
+
 # macOS - Browser Based fake OS
 
 A web recreation of macOS that runs entirely in your browser. With this you can experiance Apple desktop with smooth GSAP animations.
+
+
 
 ## What Works Now:
 
